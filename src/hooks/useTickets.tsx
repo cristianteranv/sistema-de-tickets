@@ -1,79 +1,117 @@
-import { useState, useMemo } from "react";
-import mockTickets, { Ticket } from "../assets/mockTickets";
+import { useState, useEffect, useCallback } from "react";
+import { Ticket, ticket_api } from "../api/tickets";
+import { useAuth } from "../contexts/AuthContext";
+import { Group } from "../api/auth";
 
-export type FilterKeys = "status" | "priority" | "userGroup" | "project";
+export type FilterKeys = "prioridad" | "grupo" | "proyecto";
 
-export default function useTickets(currentUser: string) {
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
+interface Filters {
+  prioridad: number | null;
+  grupo: number | null;
+  proyecto: number | null;
+}
+
+export default function useTickets() {
+  const { userId, projects } = useAuth();
+
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    status: "",
-    priority: "",
-    userGroup: "",
-    project: "",
+  const [filters, setFilters] = useState<Filters>({
+    prioridad: null,
+    grupo: null,
+    proyecto: null,
+  });
+  const [pagination, setPagination] = useState({
+    limit: 20,
+    offset: 0,
   });
 
-  const filteredTickets = useMemo(() => {
-    return tickets.filter((ticket) => {
-      const matchesUser =
-        ticket.creator === currentUser || ticket.assignee === currentUser;
+  const [availableGroups, setAvailableGroups] = useState<{id: number; name: string}[]>([]);
 
-      const searchMatch = Object.values(ticket).some((value) =>
-        String(value).toLowerCase().includes(searchQuery.toLowerCase())
+  if (!userId) {
+    throw Error("UserId error");
+  }
+
+  useEffect(() => {
+    if (!filters.proyecto) {
+      // If no project selected, show all groups from all projects
+      const allGroups = projects.flatMap(project => 
+        project.grupos.map(group => ({
+          id: group.id,
+          name: group.name
+        }))
       );
-
-      const filterMatch = Object.entries(filters).every(([key, value]) => {
-        if (!value) return true;
+      
+      // Remove duplicates (if any group appears in multiple projects)
+      const uniqueGroups = Array.from(
+        new Map(allGroups.map(item => [item.id, item])).values()
+      );
+      
+      setAvailableGroups(uniqueGroups);
+    } else {
+      // If project selected, show only groups from that project
+      const selectedProject = projects.find(p => p.id === filters.proyecto);
+      if (selectedProject) {
+        const projectGroups = selectedProject.grupos.map(group => ({
+          id: group.id,
+          name: group.name
+        }));
+        setAvailableGroups(projectGroups);
         
-        // For status and priority, do exact match
-        if (key === "status" || key === "priority") {
-          return ticket[key as keyof Ticket] === value;
+        // If current group is not in this project, reset it
+        if (filters.grupo && !projectGroups.some(g => g.id === filters.grupo)) {
+          setFilters(prev => ({ ...prev, grupo: null }));
         }
-        
-        // For other fields, do case-insensitive includes match
-        return String(ticket[key as keyof Ticket])
-          .toLowerCase()
-          .includes(String(value).toLowerCase());
-      });
+      }
+    }
+  }, [filters, projects]);
 
-      return matchesUser && (searchMatch || searchQuery === "") && filterMatch;
-    });
-  }, [tickets, searchQuery, filters, currentUser]);
+  const fetchTickets = useCallback(async () => {
+    const queryParams = new URLSearchParams();
+    queryParams.append("limit", pagination.limit.toString());
+    queryParams.append("offset", pagination.offset.toString());
+    
+    if (searchQuery) {
+      queryParams.append("asunto", searchQuery);
+    }
+    
+    if (filters.prioridad) queryParams.append("prioridad", filters.prioridad.toString());
+    if (filters.grupo) queryParams.append("grupo", filters.grupo.toString());
+    if (filters.proyecto) queryParams.append("proyecto", filters.proyecto.toString());
 
-  const uniqueValues = useMemo(
-    () => ({
-      statuses: Array.from(new Set(tickets.map((t) => t.status))),
-      priorities: Array.from(new Set(tickets.map((t) => t.priority))),
-      userGroups: Array.from(new Set(tickets.map((t) => t.userGroup))),
-      projects: Array.from(new Set(tickets.map((t) => t.project))),
-    }),
-    [tickets]
-  );
+    const data = await ticket_api.getTicketsByUserId(userId, queryParams);
+    setTickets(data.results as Ticket[]);
+  }, [filters, pagination, searchQuery, userId]);
 
-  const handleFilterChange = (field: FilterKeys, value: string) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
+
+  const priorities = [...new Set(tickets.map(ticket => ticket.prioridad))].sort();
+
+  const handleFilterChange = (field: FilterKeys, value: number | null) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  const createTicket = (ticketData: Omit<Ticket, "id" | "status" | "createdAt" | "updatedAt">) => {
-    const newTicket: Ticket = {
-      id: String(Math.floor(Math.random() * 10000)),
-      status: "open",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...ticketData,
-    };
-    setTickets((prev) => [...prev, newTicket]);
-    return newTicket;
+  const uniqueValues = {
+    prioridades: priorities,
+    grupos: availableGroups as Group[],
+    proyectos: projects
+  };
+
+  const createTicket = () => {
+    // ticket_api.createTicket()
   };
 
   return {
     tickets,
-    filteredTickets,
     searchQuery,
+    uniqueValues,
     setSearchQuery,
     filters,
     handleFilterChange,
-    uniqueValues,
     createTicket,
+    setPagination,
+    refreshTickets: fetchTickets,
   };
-} 
+}

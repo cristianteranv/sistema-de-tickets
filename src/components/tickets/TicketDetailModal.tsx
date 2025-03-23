@@ -12,7 +12,7 @@ import {
   Box,
   Stack,
 } from "@mui/material";
-import { Ticket } from "../assets/mockTickets";
+import { Ticket } from "../../api/tickets";
 
 interface TicketDetailModalProps {
   ticket: Ticket | null;
@@ -41,8 +41,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   if (!ticket) return null;
 
   // Format dates for better display
-  const createdDate = new Date(ticket.createdAt);
-  const updatedDate = new Date(ticket.updatedAt);
+  const createdDate = new Date(ticket.created_at);
+  const updatedDate = new Date(ticket.updated_at);
 
   const formatDateTime = (date: Date) => {
     return {
@@ -72,7 +72,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     >
       <DialogTitle sx={{ pb: 1 }}>
         <Typography variant="h5" fontWeight="bold">
-          {ticket.title}
+          {ticket.asunto}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Ticket #{ticket.id} 
@@ -87,9 +87,9 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
           <Box>
             <Stack direction="row" spacing={2}>
               <Chip 
-                label={ticket.status} 
+                label={'status'} 
                 sx={{ 
-                  backgroundColor: statusColors[ticket.status],
+                  backgroundColor: statusColors['status'],
                   color: 'white',
                   fontWeight: 'bold',
                   textTransform: 'capitalize'
@@ -97,9 +97,9 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               />
               
               <Chip 
-                label={ticket.priority} 
+                label={ticket.prioridad} 
                 sx={{ 
-                  backgroundColor: priorityColors[ticket.priority],
+                  backgroundColor: priorityColors[ticket.prioridad],
                   color: 'white',
                   fontWeight: 'bold',
                   textTransform: 'capitalize'
@@ -115,7 +115,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 Project
               </Typography>
               <Typography variant="body1">
-                {ticket.project}
+                {ticket.proyecto_nombre}
               </Typography>
             </Grid>
             
@@ -124,7 +124,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 User Group
               </Typography>
               <Typography variant="body1">
-                {ticket.userGroup}
+                {ticket.grupo_nombre}
               </Typography>
             </Grid>
             
@@ -133,7 +133,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 Creator
               </Typography>
               <Typography variant="body1">
-                {ticket.creator}
+                {ticket.auth_user_nombre}
               </Typography>
             </Grid>
             
@@ -142,7 +142,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 Assignee
               </Typography>
               <Typography variant="body1">
-                {ticket.assignee}
+                {ticket.auth_user_atendiendo_nombre}
               </Typography>
             </Grid>
           </Grid>
@@ -152,14 +152,32 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Description
             </Typography>
-            <Typography variant="body1" sx={{ 
+
+            {/* CLEAN UP CLEAN UP CLEAN UP */}
+            
+            {/* <Typography variant="body1" sx={{ 
               p: 2, 
               backgroundColor: 'rgba(0,0,0,0.04)',
               borderRadius: 1,
               whiteSpace: 'pre-line'
             }}>
-              {ticket.description}
-            </Typography>
+              <div>
+              {ticket.mensajes.map((mensaje)=><div>{mensaje}</div>)}
+              </div>
+            </Typography> */}
+            
+              <div>
+              {ticket.mensajes.map((mensaje)=>
+              <Typography variant="body1" sx={{ 
+                p: 2, 
+                backgroundColor: 'rgba(0,0,0,0.04)',
+                borderRadius: 1,
+                whiteSpace: 'pre-line'
+              }}>
+                {mensaje.contenido}
+                </Typography>)}
+              </div>
+            
           </Box>
           
           {/* Dates */}

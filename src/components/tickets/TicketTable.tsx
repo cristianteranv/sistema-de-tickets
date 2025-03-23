@@ -11,7 +11,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { Ticket } from "../assets/mockTickets";
+import { Ticket } from "../../api/tickets";
 
 interface TicketTableProps {
   tickets: Ticket[];
@@ -19,18 +19,18 @@ interface TicketTableProps {
 }
 
 // Color mapping for statuses and priorities
-const statusColors: Record<string, string> = {
-  "open": "#ff9800", // orange 
-  "in-progress": "#2196f3", // Blue 
-  "resolved": "#4caf50", //  green
-  "closed": "#979dac", // gray
-};
+// const statusColors: Record<string, string> = {
+//   "open": "#ff9800", // orange 
+//   "in-progress": "#2196f3", // Blue 
+//   "resolved": "#4caf50", //  green
+//   "closed": "#979dac", // gray
+// };
 
 const priorityColors: Record<string, string> = {
-  "low": "#4caf50", //  Green
-  "medium": "#ff9800", // orange
-  "high": "#f44336", // red
-  "critical": "#000000", // black
+  0: "#4caf50", //  Green
+  1: "#ff9800", // orange
+  2: "#f44336", // red
+  3: "#000000", // black
 };
 
 const TicketTable: React.FC<TicketTableProps> = ({ tickets, onSelectTicket }) => {
@@ -77,18 +77,19 @@ const TicketTable: React.FC<TicketTableProps> = ({ tickets, onSelectTicket }) =>
                 <TableCell>{ticket.id}</TableCell>
                 <TableCell>
                   <Typography variant="body1" fontWeight="medium">
-                    {ticket.title}
+                    {ticket.asunto}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {ticket.project}
+                    {ticket.proyecto_nombre} / {ticket.grupo_nombre}
                   </Typography>
                 </TableCell>
                 <TableCell>
                   <Chip 
-                    label={ticket.status} 
+                    label={'status'} 
                     size="small" 
                     sx={{ 
-                      backgroundColor: statusColors[ticket.status] || '#757575',
+                      // backgroundColor: statusColors[ticket.status] || '#757575',
+                      backgroundColor: '#757575',
                       color: 'white',
                       fontWeight: 'bold',
                       textTransform: 'capitalize'
@@ -97,24 +98,24 @@ const TicketTable: React.FC<TicketTableProps> = ({ tickets, onSelectTicket }) =>
                 </TableCell>
                 <TableCell>
                   <Chip 
-                    label={ticket.priority} 
+                    label={ticket.prioridad} 
                     size="small" 
                     sx={{ 
-                      backgroundColor: priorityColors[ticket.priority] || '#757575',
+                      backgroundColor: priorityColors[ticket.prioridad] || '#757575',
                       color: 'white',
                       fontWeight: 'bold',
                       textTransform: 'capitalize'
                     }} 
                   />
                 </TableCell>
-                <TableCell>{ticket.assignee}</TableCell>
+                <TableCell>{ticket.auth_user_atendiendo_nombre}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Typography variant="body2">
-                      {new Date(ticket.updatedAt).toLocaleDateString()}
+                      {new Date(ticket.updated_at).toLocaleDateString()}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(ticket.updatedAt).toLocaleTimeString()}
+                      {new Date(ticket.updated_at).toLocaleTimeString()}
                     </Typography>
                   </Box>
                 </TableCell>
